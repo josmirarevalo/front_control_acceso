@@ -1,0 +1,21 @@
+{
+  "dashboard": {
+    "WELCOME": "Bienvenido!"
+  },
+  "topbar": {
+    "search": {
+      "PLACEHOLDER": "Type and hit enter.."
+    }
+  },
+  "sidebar": {
+    "WELCOME": "Bienvenido",
+    "heading": {
+      "HEADER": "CU",      
+      "USER_INFO": "Información de Usuarios"
+      
+    },
+    "nav": {
+      "HOME": "Inicio"
+    }
+  }
+}

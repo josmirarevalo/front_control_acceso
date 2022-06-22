@@ -1,0 +1,97 @@
+# This is a sample build configuration for JavaScript.
+# Check our guides at https://confluence.atlassian.com/x/14UWN for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+# https://support.atlassian.com/bitbucket-cloud/docs/laravel-with-bitbucket-pipelines/
+image: node:latest
+
+options:
+  max-time: 20
+
+pipelines:
+  branches:
+    staging:
+      - step:
+          name: Build
+          caches:
+            - node
+          script:
+            - unset CI
+            - npm install
+            - npm run build
+      - step:
+          name: Deploy
+          deployment: Staging
+          script:
+            - apt-get update
+            - apt-get install -y zip
+            - rm .env .env.production
+            - mv .env.staging .env
+            - cp .env .env.production
+            - zip -r application.zip  * .[^.]*
+            - pipe: atlassian/aws-code-deploy:0.5.3
+              variables:
+                AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                APPLICATION_NAME: ${APPLICATION_NAME}
+                S3_BUCKET: ${S3_BUCKET}
+                COMMAND: 'upload'
+                ZIP_FILE: 'application.zip'
+                VERSION_LABEL: 'frontend-staging-1.0.0'
+            - pipe: atlassian/aws-code-deploy:0.5.3
+              variables:
+                AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                APPLICATION_NAME: ${APPLICATION_NAME}
+                DEPLOYMENT_GROUP: ${DEPLOYMENT_GROUP}
+                S3_BUCKET: ${S3_BUCKET}
+                COMMAND: 'deploy'
+                WAIT: 'true'
+                VERSION_LABEL: 'frontend-staging-1.0.0'
+                IGNORE_APPLICATION_STOP_FAILURES: 'true'
+                FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
+    master:
+      - step:
+          name: Build
+          caches:
+            - node
+          script:
+            - unset CI
+            - npm install
+            - npm run build
+      - step:
+          name: Deploy
+          deployment: Production
+          script:
+            - apt-get update
+            - apt-get install -y zip
+            - rm .env .env.staging
+            - mv .env.production .env
+            - cp .env .env.production
+            - zip -r application.zip  * .[^.]*
+            - pipe: atlassian/aws-code-deploy:0.5.3
+              variables:
+                AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                APPLICATION_NAME: ${APPLICATION_NAME}
+                S3_BUCKET: ${S3_BUCKET}
+                COMMAND: 'upload'
+                ZIP_FILE: 'application.zip'
+                VERSION_LABEL: 'frontend-prod-1.0.0'
+            - pipe: atlassian/aws-code-deploy:0.5.3
+              variables:
+                AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                APPLICATION_NAME: ${APPLICATION_NAME}
+                DEPLOYMENT_GROUP: ${DEPLOYMENT_GROUP}
+                S3_BUCKET: ${S3_BUCKET}
+                COMMAND: 'deploy'
+                WAIT: 'true'
+                VERSION_LABEL: 'frontend-prod-1.0.0'
+                IGNORE_APPLICATION_STOP_FAILURES: 'true'
+                FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
